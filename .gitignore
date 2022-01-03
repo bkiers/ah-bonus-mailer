@@ -1,0 +1,5 @@
+products.json
+secrets.config
+venv/
+emails/*.txt
+.idea/
