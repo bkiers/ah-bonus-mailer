@@ -1,4 +1,4 @@
 [
-  { "webshopId": "wi4177", "query":  "broccoli" },
-  { "webshopId": "wi67896", "query":  "handsinaasappelen" }
+  { "webshopId": "wi4177", "query":  "broccoli", "email": "me@something.tld" },
+  { "webshopId": "wi67896", "query":  "handsinaasappelen", "email": "you@something.tld" }
 ]

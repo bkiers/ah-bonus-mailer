@@ -43,7 +43,10 @@ then `products.json` should look like this:
 
 ```json
 [
-  { "webshopId": "wi4177", "query":  "broccoli" },
-  { "webshopId": "wi67896", "query":  "handsinaasappelen" }
+  { "webshopId": "wi4177", "query":  "broccoli", "email": "me@something.tld" },
+  { "webshopId": "wi67896", "query":  "handsinaasappelen", "email": "you@something.tld" }
 ]
 ```
+
+As you can see, the `email` field can differ per product. That way, you can
+help out a friend that doesn't run a small server (yet).
