@@ -9,7 +9,7 @@ import json
 config = dotenv_values("secrets.config")
 
 
-def send_email(file_name, subject, text):
+def send_email(email, file_name, subject, text):
     if os.path.isfile(file_name):
         # An email was already sent for this
         return
@@ -20,7 +20,7 @@ def send_email(file_name, subject, text):
         'Messages': [
             {
                 "From": {"Email": config['EMAIL_FROM']},
-                "To": [{"Email": config['EMAIL_TO']}],
+                "To": [{"Email": email}],
                 "Subject": subject,
                 "TextPart": text,
                 "HTMLPart": text.replace('\n', '<br>')
@@ -35,7 +35,7 @@ def send_email(file_name, subject, text):
             f.write(text)
 
 
-def notify_for(product):
+def notify_for(product, email):
     start_date = product['bonusStartDate']
     end_date = product['bonusEndDate']
     file_name = f"./emails/{product['webshopId']}_{start_date}_{end_date}.txt"
@@ -44,6 +44,7 @@ def notify_for(product):
     bonus_mechanism = product['bonusMechanism']
 
     send_email(
+        email,
         file_name,
         f"New AH Promotion!",
         f"Product: {title}\nPeriod: {start_date}…{end_date}\nType: {bonus_mechanism} ({promotion_type})")
@@ -68,6 +69,7 @@ if __name__ == '__main__':
 
                 if len(search_results) == 0:
                     send_email(
+                        product['email'],
                         f"./emails/no_results_{product['webshopId']}.txt",
                         f"No results for {product['webshopId']}",
                         f"The query '{product['query']}' did not produce any results :("
@@ -75,7 +77,7 @@ if __name__ == '__main__':
                 else:
                     for result in search_results:
                         if 'bonusStartDate' in result and product['webshopId'] == f"wi{result['webshopId']}":
-                            notify_for(result)
+                            notify_for(result, product['email'])
                             break
         except Exception as e:
             print(f"OOPS: {e}")
