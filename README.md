@@ -32,19 +32,12 @@ Copy `secrets_example.json` to `secrets.json` and replace the `TODO`s in
 
 Copy `products_example.json` to `products.json` and fill it with the products
 you'd like to be notified of. For example, if you want to be notified when broccoli
-and oranges are promoted, which URLs are:
-
-```
-https://www.ah.nl/producten/product/wi4177/ah-broccoli
-https://www.ah.nl/producten/product/wi67896/ah-handsinaasappelen
-```
-
-then `products.json` should look like this:
+and oranges are promoted then `products.json` should look like this:
 
 ```json
 [
-  { "webshopId": "wi4177", "query":  "broccoli", "email": "me@something.tld" },
-  { "webshopId": "wi67896", "query":  "handsinaasappelen", "email": "you@something.tld" }
+  { "pattern": "broccoli", "email": "me@something.tld" },
+  { "pattern": "handsinaasappelen", "email": "you@somewhat.tld" }
 ]
 ```
 
