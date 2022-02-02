@@ -1,12 +1,27 @@
 import time
+from bs4 import BeautifulSoup
+import requests
 from datetime import datetime
-from supermarktconnector.ah import AHConnector
 from mailjet_rest import Client
 import os
+import re
 from dotenv import dotenv_values
 import json
 
 config = dotenv_values("secrets.config")
+
+
+class BonusProduct:
+
+    def __init__(self, week, line):
+        self.week = week
+        self.line = re.sub('[\\s\\d.]+$', '', line)
+
+    def matches(self, pattern):
+        return pattern.lower() in self.line.lower()
+
+    def __repr__(self):
+        return f'{self.line}'
 
 
 def send_email(email, file_name, subject, text):
@@ -32,22 +47,33 @@ def send_email(email, file_name, subject, text):
 
     if response.status_code == 200:
         with open(file_name, 'w') as f:
+            print(f"Sent message to {email}: {text}")
             f.write(text)
 
 
-def notify_for(product, email):
-    start_date = product['bonusStartDate']
-    end_date = product['bonusEndDate']
-    file_name = f"./emails/{product['webshopId']}_{start_date}_{end_date}.txt"
-    title = product['title']
-    promotion_type = product['promotionType']
-    bonus_mechanism = product['bonusMechanism']
+def bonus_products():
+    res = requests.get('https://www.ah.nl/bonus')
+    soup = BeautifulSoup(res.text, 'html.parser')
+    week_infos = soup.findAll('span', {'class': re.compile('period-toggle_periodLabel__.*')})
+    products = []
 
-    send_email(
-        email,
-        file_name,
-        f"New AH Promotion!",
-        f"Product: {title}\nPeriod: {start_date}…{end_date}\nType: {bonus_mechanism} ({promotion_type})")
+    if len(week_infos) == 0:
+        print('No week info found!')
+    else:
+        week = week_infos[0].getText()
+        bonus_tiles = soup.findAll('a', {'class': re.compile('card_root__.*')})
+
+        for bonus_tile in bonus_tiles:
+            products.append(BonusProduct(week, bonus_tile.get_text(separator=' ')))
+
+    return products
+
+
+def notify_for(bonus_product, email, pattern):
+    week_id = re.sub('\\W', '_', bonus_product.week)
+    file_name = f"./emails/{email}_{week_id}_{pattern}.txt"
+
+    send_email(email, file_name, "New AH Promotion!", f"{bonus_product.line}\nPeriod: {bonus_product.week}")
 
 
 def load_products():
@@ -60,25 +86,13 @@ if __name__ == '__main__':
 
     while True:
         try:
-            connector = AHConnector()
             products = load_products()
+            bonus_products = bonus_products()
 
             for product in products:
-                result = connector.search_products(product['query'])
-                search_results = result['products']
-
-                if len(search_results) == 0:
-                    send_email(
-                        product['email'],
-                        f"./emails/no_results_{product['webshopId']}.txt",
-                        f"No results for {product['webshopId']}",
-                        f"The query '{product['query']}' did not produce any results :("
-                    )
-                else:
-                    for result in search_results:
-                        if 'bonusStartDate' in result and product['webshopId'] == f"wi{result['webshopId']}":
-                            notify_for(result, product['email'])
-                            break
+                for bonus_product in bonus_products:
+                    if bonus_product.matches(product['pattern']):
+                        notify_for(bonus_product, product['email'], product['pattern'])
         except Exception as e:
             print(f"OOPS: {e}")
 
